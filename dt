@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import re
+import parsedatetime
+from datetime import datetime
+
+output_format = '%a %d %b %I:%M %p %Y'
+
+def fuzzy_parse(fuzzy_str):
+    cal = parsedatetime.Calendar()
+    time_struct, parse_status = cal.parse(fuzzy_str)
+    if parse_status != 1:
+        return None
+    return datetime(*time_struct[:6])
+
+try:
+    while True:
+        input_line = input()
+        re_match = re.search(r"^(.*)\[(.*)\](.*)$", input_line)
+        if re_match:
+            parse_result = fuzzy_parse(re_match.group(2))
+            if parse_result is not None:
+                print(re_match.group(1) + '[' + parse_result.strftime(output_format) + ']' + re_match.group(3))
+            else:
+                exit('Parsing date time failed.')
+        else:
+            print(input_line)
+except EOFError:
+    pass
+

@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+
+from datetime import datetime
+import re
+
+datetime_format = '%a %d %b %I:%M %p %Y'
+
+##################################################################################
+# let's start by trying to parse all the TODOs
+##################################################################################
+
+class Todo:
+    def __init__(self, content, dt=None):
+        self.content = content
+        self.dt = dt
+class Filler:
+    def __init__(self, content):
+        self.content = content
+nodes = []
+isFiller = True
+accumulated_content = ''
+try:
+    while True:
+        line = input()
+
+        if line.startswith('> '):
+            # end off current token
+            if accumulated_content:
+                nodes.append(Filler(accumulated_content) if isFiller else Todo(accumulated_content))
+            # get ready to read next todo
+            accumulated_content = ''
+            isFiller = False
+        elif accumulated_content and not isFiller and re.search(r"^[=-]+$", line):
+            # end off current todo
+            nodes.append(Todo(accumulated_content))
+            # get ready to read filler
+            accumulated_content = ''
+            isFiller = True
+
+        accumulated_content = accumulated_content + line + '\n'
+except EOFError:
+    pass
+if accumulated_content:
+    nodes.append(Filler(accumulated_content) if isFiller else Todo(accumulated_content))
+
+# enrich with dates where possible
+for node in nodes:
+    if not isinstance(node, Todo):
+        continue
+    re_match = re.search(r"\[(.*)\]", node.content)
+    if re_match:
+        result = None
+        try:
+            result = datetime.strptime(re_match.group(1), datetime_format)
+        except ValueError as e:
+            continue
+        node.dt = result
+
+##################################################################################
+# ok, now let's move everything not relevant for today into the backlog
+##################################################################################
+
+backlog_prepend = ''
+for node in nodes:
+    if not isinstance(node, Todo) or node.dt is None or node.dt < datetime.now():
+        # we want to keep this around, so write it to stdout
+        print(node.content, end='')
+    else:
+        # todo is marked for the future, so needs to go into the backlog
+        backlog_prepend = backlog_prepend + node.content.strip() + '\n'
+
+##################################################################################
+# ok, now let's move everything not relevant for today into the backlog
+##################################################################################
+
+with open('backlog.txt', 'r+') as backlog_file:
+    old_data = backlog_file.read()
+    backlog_file.seek(0)
+    backlog_file.write(backlog_prepend + old_data)
+
