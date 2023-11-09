@@ -2,8 +2,24 @@
 
 from datetime import datetime
 import re
+import sys
 
 datetime_format = '%a %d %b %I:%M %p %Y'
+
+##################################################################################
+# parse args
+##################################################################################
+filename = 'backlog.txt'
+invert = False
+args = sys.argv[1:]
+if '--invert' in args or '-i' in args:
+    invert = True
+    args = [arg for arg in args if arg != '--invert' and arg != '-i']
+if args:
+    filename = args[0]
+    args = args[1:]
+if args:
+    exit('failed to parse args')
 
 ##################################################################################
 # let's start by trying to parse all the TODOs
@@ -69,11 +85,7 @@ for node in nodes:
         # todo is marked for the future, so needs to go into the backlog
         backlog_prepend = backlog_prepend + node.content.strip() + '\n'
 
-##################################################################################
-# ok, now let's move everything not relevant for today into the backlog
-##################################################################################
-
-with open('backlog.txt', 'r+') as backlog_file:
+with open(filename, 'r+') as backlog_file:
     old_data = backlog_file.read()
     backlog_file.seek(0)
     backlog_file.write(backlog_prepend + old_data)
