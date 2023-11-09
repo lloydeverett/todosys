@@ -6,20 +6,28 @@ import sys
 
 datetime_format = '%a %d %b %I:%M %p %Y'
 
+usage_msg = '''either specify no args for default behaviour, or give all of them:
+backlog [input] [output] [secondary-output]
+Flags such as "--invert" may appear anywhere.
+Use "-" as an arg to represent standard in or standard out.'''
+
 ##################################################################################
 # parse args
 ##################################################################################
-filename = 'backlog.txt'
+inputFilename = '-'
+outputFilename = '-'
+secondaryFilename = 'backlog.txt'
 invert = False
 args = sys.argv[1:]
 if '--invert' in args or '-i' in args:
     invert = True
     args = [arg for arg in args if arg != '--invert' and arg != '-i']
 if args:
-    filename = args[0]
-    args = args[1:]
-if args:
-    exit('failed to parse args')
+    if len(args) != 3:
+        exit(usage_msg)
+    inputFilename = args[0]
+    outputFilename = args[1]
+    secondaryFilename = args[2]
 
 ##################################################################################
 # let's start by trying to parse all the TODOs
@@ -76,16 +84,17 @@ for node in nodes:
 # ok, now let's move everything not relevant for today into the backlog
 ##################################################################################
 
+main_output_file = sys.stdout
 backlog_prepend = ''
 for node in nodes:
     if not isinstance(node, Todo) or node.dt is None or node.dt < datetime.now():
         # we want to keep this around, so write it to stdout
-        print(node.content, end='')
+        main_output_file.write(node.content)
     else:
         # todo is marked for the future, so needs to go into the backlog
         backlog_prepend = backlog_prepend + node.content.strip() + '\n'
 
-with open(filename, 'r+') as backlog_file:
+with open(secondaryFilename, 'r+') as backlog_file:
     old_data = backlog_file.read()
     backlog_file.seek(0)
     backlog_file.write(backlog_prepend + old_data)
