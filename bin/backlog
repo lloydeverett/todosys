@@ -43,10 +43,8 @@ class Filler:
 nodes = []
 isFiller = True
 accumulated_content = ''
-try:
-    while True:
-        line = input()
-
+with (sys.stdin if input_filename == '-' else open(input_filename, 'r')) as input_file:
+    for line in input_file:
         if line.startswith('> '):
             # end off current token
             if accumulated_content:
@@ -61,9 +59,7 @@ try:
             accumulated_content = ''
             isFiller = True
 
-        accumulated_content = accumulated_content + line + '\n'
-except EOFError:
-    pass
+        accumulated_content = accumulated_content + line
 if accumulated_content:
     nodes.append(Filler(accumulated_content) if isFiller else Todo(accumulated_content))
 
@@ -87,7 +83,8 @@ for node in nodes:
 output_file = sys.stdout if output_filename == '-' else open(output_filename, 'w')
 backlog_prepend = ''
 for node in nodes:
-    if not isinstance(node, Todo) or node.dt is None or node.dt < datetime.now():
+    if not isinstance(node, Todo) or node.dt is None or \
+      (not invert and node.dt < datetime.now()) or (invert and not (node.dt < datetime.now())):
         # we want to keep this around, so write it to stdout
         output_file.write(node.content)
     else:
