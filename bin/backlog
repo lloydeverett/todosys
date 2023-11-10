@@ -14,9 +14,9 @@ Use "-" as an arg to represent standard in or standard out.'''
 ##################################################################################
 # parse args
 ##################################################################################
-inputFilename = '-'
-outputFilename = '-'
-secondaryFilename = 'backlog.txt'
+input_filename = '-'
+output_filename = '-'
+secondary_filename = 'backlog.txt'
 invert = False
 args = sys.argv[1:]
 if '--invert' in args or '-i' in args:
@@ -25,9 +25,9 @@ if '--invert' in args or '-i' in args:
 if args:
     if len(args) != 3:
         exit(usage_msg)
-    inputFilename = args[0]
-    outputFilename = args[1]
-    secondaryFilename = args[2]
+    input_filename = args[0]
+    output_filename = args[1]
+    secondary_filename = args[2]
 
 ##################################################################################
 # let's start by trying to parse all the TODOs
@@ -84,18 +84,24 @@ for node in nodes:
 # ok, now let's move everything not relevant for today into the backlog
 ##################################################################################
 
-main_output_file = sys.stdout
+output_file = sys.stdout if output_filename == '-' else open(output_filename, 'w')
 backlog_prepend = ''
 for node in nodes:
     if not isinstance(node, Todo) or node.dt is None or node.dt < datetime.now():
         # we want to keep this around, so write it to stdout
-        main_output_file.write(node.content)
+        output_file.write(node.content)
     else:
         # todo is marked for the future, so needs to go into the backlog
         backlog_prepend = backlog_prepend + node.content.strip() + '\n'
+if output_file is not sys.stdout:
+    output_file.close()
 
-with open(secondaryFilename, 'r+') as backlog_file:
-    old_data = backlog_file.read()
-    backlog_file.seek(0)
-    backlog_file.write(backlog_prepend + old_data)
+if secondary_filename == '-':
+    sys.stdout.write(backlog_prepend)
+else:
+    secondary_file = open(secondary_filename, 'r+')
+    old_data = secondary_file.read()
+    secondary_file.seek(0)
+    secondary_file.write(backlog_prepend + old_data)
+    secondary_file.close()
 
