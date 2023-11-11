@@ -14,6 +14,7 @@ Use "-" as an arg to represent standard in or standard out.'''
 ##################################################################################
 # parse args
 ##################################################################################
+
 input_filename = '-'
 output_filename = '-'
 secondary_filename = 'backlog.txt'
@@ -82,9 +83,10 @@ for node in nodes:
 
 output_file = sys.stdout if output_filename == '-' else open(output_filename, 'w')
 backlog_prepend = ''
+now = datetime.now()
 for node in nodes:
     if not isinstance(node, Todo) or node.dt is None or \
-      (not invert and node.dt < datetime.now()) or (invert and not (node.dt < datetime.now())):
+      (not invert and node.dt < now) or (invert and not (node.dt < now)):
         # we want to keep this around, so write it to stdout
         output_file.write(node.content)
     else:
